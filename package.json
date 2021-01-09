@@ -1,0 +1,8 @@
+{
+  "name": "drag-handler",
+  "version": "1.0.0",
+  "main": "DragHandler.js",
+  "repository": "git@github.com:LiamAttClarke/drag-handler.git",
+  "author": "LiamAttClarke <liam.att.clarke@gmail.com>",
+  "license": "MIT"
+}
