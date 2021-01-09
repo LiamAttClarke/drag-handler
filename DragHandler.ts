@@ -6,18 +6,18 @@ export enum DragState {
   Dragging = 2,
 }
 
-type DragEvent = {
+export type DragEvent = {
   pointerEvent: PointerEvent,
   dragStart?: Vector2,
   dragOffset?: Vector2,
   dragOffsetDelta?: Vector2,
 }
 
-interface IDragHandler {
+export interface IDragHandler {
   (detail: DragEvent): void;
 }
 
-type DragHandlerOptions = {
+export type DragHandlerOptions = {
   dragStartThreshold?: number,
   onDragGrab?: IDragHandler,
   onDragStart?: IDragHandler,
