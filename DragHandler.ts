@@ -7,24 +7,24 @@ export enum DragState {
 }
 
 export type DragEvent = {
-  pointerEvent: PointerEvent,
-  dragStart?: Vector2,
-  dragOffset?: Vector2,
-  dragOffsetDelta?: Vector2,
+  pointerEvent: PointerEvent;
+  dragStart?: Vector2;
+  dragOffset?: Vector2;
+  dragOffsetDelta?: Vector2;
 }
 
-export interface IDragHandler {
+export interface DragEventHandler {
   (detail: DragEvent): void;
 }
 
 export type DragHandlerOptions = {
-  dragStartThreshold?: number,
-  onDragGrab?: IDragHandler,
-  onDragStart?: IDragHandler,
-  onDragMove?: IDragHandler,
-  onDragEnd?: IDragHandler,
-  onDragCancel?: IDragHandler,
-} 
+  dragStartThreshold?: number;
+  onDragGrab?: DragEventHandler;
+  onDragStart?: DragEventHandler;
+  onDragMove?: DragEventHandler;
+  onDragEnd?: DragEventHandler;
+  onDragCancel?: DragEventHandler;
+}
 
 const DEFAULT_OPTIONS: DragHandlerOptions = {
   dragStartThreshold: 5,
@@ -32,28 +32,34 @@ const DEFAULT_OPTIONS: DragHandlerOptions = {
 
 export default class DragHandler {
   dragHandles: Element[];
+
   dragState: DragState;
+
   dragStartThreshold: number;
-  dragStart: Vector2;
-  dragEnd: Vector2;
-  dragOffset: Vector2;
-  onDragGrab: IDragHandler;
-  onDragStart: IDragHandler;
-  onDragMove: IDragHandler;
-  onDragEnd: IDragHandler;
-  onDragCancel: IDragHandler;
+
+  dragStart = new Vector2();
+
+  dragOffset = new Vector2();
+
+  onDragGrab?: DragEventHandler;
+
+  onDragStart?: DragEventHandler;
+
+  onDragMove?: DragEventHandler;
+
+  onDragEnd?: DragEventHandler;
+
+  onDragCancel?: DragEventHandler;
 
   constructor(dragHandles: Element|Element[], options: DragHandlerOptions) {
     const opts: DragHandlerOptions = { ...DEFAULT_OPTIONS, ...options };
     this.dragHandles = dragHandles instanceof Array ? dragHandles : [dragHandles];
     this.dragState = DragState.Idle;
-    this.dragStartThreshold = opts.dragStartThreshold;
-    this.dragStart = null;
-    this.dragOffset = null;
+    this.dragStartThreshold = opts.dragStartThreshold || 0;
     this.dragHandles.forEach((dragHandle) => {
-      dragHandle.addEventListener('pointerdown', this.onPointerDown.bind(this));
-      dragHandle.addEventListener('pointermove', this.onPointerMove.bind(this));
-      dragHandle.addEventListener('pointerup', this.onPointerUp.bind(this));
+      dragHandle.addEventListener('pointerdown', (e) => this.onPointerDown(e as PointerEvent));
+      dragHandle.addEventListener('pointermove', (e) => this.onPointerMove(e as PointerEvent));
+      dragHandle.addEventListener('pointerup', (e) => this.onPointerUp(e as PointerEvent));
     });
     this.onDragGrab = opts.onDragGrab;
     this.onDragStart = opts.onDragStart;
@@ -65,7 +71,7 @@ export default class DragHandler {
   onPointerDown(event: PointerEvent) {
     // Reject non-primary mouse buttons (usually left-click)
     if (event.button > 0) return;
-    const dragHandle = <Element>event.currentTarget;    
+    const dragHandle = event.currentTarget as Element;
     dragHandle.setPointerCapture(event.pointerId);
     this.dragState = DragState.Holding;
     this.dragStart = new Vector2(event.pageX, event.pageY);
@@ -81,45 +87,43 @@ export default class DragHandler {
   onPointerMove(event: PointerEvent) {
     // Reject non-primary mouse buttons (usually left-click)
     if (event.button > 0) return;
-    if (this.dragStart) {
-      const dragHandle = event.currentTarget;
-      const dragDistance = new Vector2(event.pageX, event.pageY)
-        .subtract(this.dragStart)
-        .magnitude();
-      if (this.dragState === DragState.Holding && dragDistance > this.dragStartThreshold) {
-        this.dragState = DragState.Dragging;
-        const detail = { pointerEvent: event, dragStart: this.dragStart };
-        if (this.onDragStart) {
-          this.onDragStart(detail);
-        } else {
-          dragHandle.dispatchEvent(new CustomEvent('drag-start', { detail }));
-        }
+    const dragHandle = event.currentTarget;
+    const dragDistance = new Vector2(event.pageX, event.pageY)
+      .subtract(this.dragStart)
+      .magnitude();
+    if (this.dragState === DragState.Holding && dragDistance > this.dragStartThreshold) {
+      this.dragState = DragState.Dragging;
+      const detail = { pointerEvent: event, dragStart: this.dragStart };
+      if (this.onDragStart) {
+        this.onDragStart(detail);
+      } else if (dragHandle) {
+        dragHandle.dispatchEvent(new CustomEvent('drag-start', { detail }));
       }
-      if (this.dragState === DragState.Dragging) {
-        const dragOffset = new Vector2(event.pageX, event.pageY).subtract(this.dragStart);
-        const detail = {
-          pointerEvent: event,
-          dragOffset,
-          dragOffsetDelta: dragOffset.subtract(this.dragOffset),
-        };
-        if (this.onDragMove) {
-          this.onDragMove(detail);
-        } else {
-          dragHandle.dispatchEvent(new CustomEvent('drag-move', { detail }));
-        }
-        this.dragOffset = dragOffset;
+    }
+    if (this.dragState === DragState.Dragging) {
+      const dragOffset = new Vector2(event.pageX, event.pageY).subtract(this.dragStart);
+      const detail = {
+        pointerEvent: event,
+        dragOffset,
+        dragOffsetDelta: dragOffset.subtract(this.dragOffset),
+      };
+      if (this.onDragMove) {
+        this.onDragMove(detail);
+      } else if (dragHandle) {
+        dragHandle.dispatchEvent(new CustomEvent('drag-move', { detail }));
       }
+      this.dragOffset = dragOffset;
     }
   }
 
   onPointerUp(event: PointerEvent) {
     // Reject non-primary mouse buttons (usually left-click)
     if (event.button > 0) return;
-    const dragHandle = <Element>event.currentTarget;
+    const dragHandle = event.currentTarget as Element;
     dragHandle.releasePointerCapture(event.pointerId);
     const currentDragState = this.dragState;
     this.dragState = DragState.Idle;
-    this.dragStart = null;
+    this.dragStart = new Vector2();
     if (currentDragState === DragState.Dragging) {
       const detail = { pointerEvent: event };
       if (this.onDragEnd) {
