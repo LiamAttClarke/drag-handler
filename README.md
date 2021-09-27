@@ -10,8 +10,6 @@ Attach drag events to a set of element handles.
 * Works with any framework or none at all.
 
 ## TODO
-
-* Rewrite in Typescript
 * Add support for multi-touch
 * Setup npm distribution
 * Add documentation + example usage
