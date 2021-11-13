@@ -1,30 +1,9 @@
-import Vector2 from './Vector2';
-
-export enum DragState {
-  Idle = 0,
-  Holding = 1,
-  Dragging = 2,
-}
-
-export type DragEvent = {
-  pointerEvent: PointerEvent;
-  dragStart?: Vector2;
-  dragOffset?: Vector2;
-  dragOffsetDelta?: Vector2;
-}
-
-export interface DragEventHandler {
-  (detail: DragEvent): void;
-}
-
-export type DragHandlerOptions = {
-  dragStartThreshold?: number;
-  onDragGrab?: DragEventHandler;
-  onDragStart?: DragEventHandler;
-  onDragMove?: DragEventHandler;
-  onDragEnd?: DragEventHandler;
-  onDragCancel?: DragEventHandler;
-}
+import { Vector2 } from "@liamattclarke/vector-n";
+import {
+  DragEventHandler,
+  DragHandlerOptions,
+  DragState,
+} from "./types";
 
 const DEFAULT_OPTIONS: DragHandlerOptions = {
   dragStartThreshold: 5,
@@ -37,9 +16,9 @@ export default class DragHandler {
 
   dragStartThreshold: number;
 
-  dragStart = new Vector2();
+  dragStart = new Vector2(0, 0);
 
-  dragOffset = new Vector2();
+  dragOffset = new Vector2(0, 0);
 
   onDragGrab?: DragEventHandler;
 
@@ -56,10 +35,10 @@ export default class DragHandler {
     this.dragHandles = dragHandles instanceof Array ? dragHandles : [dragHandles];
     this.dragState = DragState.Idle;
     this.dragStartThreshold = opts.dragStartThreshold || 0;
-    this.dragHandles.forEach((dragHandle) => {
-      dragHandle.addEventListener('pointerdown', (e) => this.onPointerDown(e as PointerEvent));
-      dragHandle.addEventListener('pointermove', (e) => this.onPointerMove(e as PointerEvent));
-      dragHandle.addEventListener('pointerup', (e) => this.onPointerUp(e as PointerEvent));
+    this.dragHandles.forEach(dragHandle => {
+      dragHandle.addEventListener("pointerdown", e => this.onPointerDown(e as PointerEvent));
+      dragHandle.addEventListener("pointermove", e => this.onPointerMove(e as PointerEvent));
+      dragHandle.addEventListener("pointerup", e => this.onPointerUp(e as PointerEvent));
     });
     this.onDragGrab = opts.onDragGrab;
     this.onDragStart = opts.onDragStart;
@@ -75,12 +54,12 @@ export default class DragHandler {
     dragHandle.setPointerCapture(event.pointerId);
     this.dragState = DragState.Holding;
     this.dragStart = new Vector2(event.pageX, event.pageY);
-    this.dragOffset = new Vector2();
+    this.dragOffset = new Vector2(0, 0);
     const detail = { pointerEvent: event, dragStart: this.dragStart };
     if (this.onDragGrab) {
       this.onDragGrab(detail);
     } else {
-      dragHandle.dispatchEvent(new CustomEvent('drag-grab', { detail }));
+      dragHandle.dispatchEvent(new CustomEvent("drag-grab", { detail }));
     }
   }
 
@@ -97,7 +76,7 @@ export default class DragHandler {
       if (this.onDragStart) {
         this.onDragStart(detail);
       } else if (dragHandle) {
-        dragHandle.dispatchEvent(new CustomEvent('drag-start', { detail }));
+        dragHandle.dispatchEvent(new CustomEvent("drag-start", { detail }));
       }
     }
     if (this.dragState === DragState.Dragging) {
@@ -110,7 +89,7 @@ export default class DragHandler {
       if (this.onDragMove) {
         this.onDragMove(detail);
       } else if (dragHandle) {
-        dragHandle.dispatchEvent(new CustomEvent('drag-move', { detail }));
+        dragHandle.dispatchEvent(new CustomEvent("drag-move", { detail }));
       }
       this.dragOffset = dragOffset;
     }
@@ -123,20 +102,20 @@ export default class DragHandler {
     dragHandle.releasePointerCapture(event.pointerId);
     const currentDragState = this.dragState;
     this.dragState = DragState.Idle;
-    this.dragStart = new Vector2();
+    this.dragStart = new Vector2(0, 0);
     if (currentDragState === DragState.Dragging) {
       const detail = { pointerEvent: event };
       if (this.onDragEnd) {
         this.onDragEnd(detail);
       } else {
-        dragHandle.dispatchEvent(new CustomEvent('drag-end', { detail }));
+        dragHandle.dispatchEvent(new CustomEvent("drag-end", { detail }));
       }
     } else {
       const detail = { pointerEvent: event };
       if (this.onDragCancel) {
         this.onDragCancel(detail);
       } else {
-        dragHandle.dispatchEvent(new CustomEvent('drag-cancel', { detail }));
+        dragHandle.dispatchEvent(new CustomEvent("drag-cancel", { detail }));
       }
     }
   }

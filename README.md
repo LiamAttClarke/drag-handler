@@ -1,9 +1,7 @@
 # drag-handler
-
 Attach drag events to a set of element handles.
 
 ## Features
-
 * Does not modify element properties. Use event callbacks to receive drag state and pointer position updates.
 * Adjustable drag threshold to limit accidental drags when attempting to click element.
 * Lightweight with zero dependencies.
